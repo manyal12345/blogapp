@@ -41,8 +41,23 @@
         </div>
       </center>
     </div>
-  </main>
+{% comment %} Video slider {% endcomment %}
+    {% comment %} <section class="home">
+      {% for videos in video_slider %}
+      <video src="{{videos.video.url}}" muted autoplay loop class="video-slider active" ></video>
+      <div class="content active" >
+          <h1>{{videos.title}}</h1>
+          <p>{{videos.description}}</p>
+          <a href="#">Read More</a>
+      </div>
+      <div class="slider-navigation">
+          <div class="nav-btn"></div>
+          <div class="nav-btn"></div>
 
+      </div>
+      {% endfor %}
+  </section> {% endcomment %}
+  </main>
   
   {% if featured_blog %}
   <section class="sp">
@@ -107,7 +122,7 @@
   
       </div>
       <center>
-        <a href=""><button class="btn btn-primary rounded view">
+        <a href="{% url 'all_posts' %}"><button class="btn btn-primary rounded view">
           View more <span class="material-icons"> trending_flat </span>
         </button></a>
       </center>
@@ -145,7 +160,7 @@
         {% endfor %}
       </div>
       <center>
-        <a href=""><button class="btn btn-primary rounded view">
+        <a href="{% url 'all_posts' %}"><button class="btn btn-primary rounded view">
           View more <span class="material-icons"> trending_flat </span>
         </button></a>
       </center>

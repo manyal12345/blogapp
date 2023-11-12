@@ -1,7 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from app.forms import CommentForm, NewUserForm, SubscribeForm
 from django.http import HttpResponseRedirect
-from app.models import Comments, Post, Tag, Profile, WebsiteMeta
+from app.models import Comments, Post, Tag, Profile, VideoSlider, WebsiteMeta
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.db.models import Count
@@ -16,13 +16,16 @@ def index(request):
     subscribe_form = SubscribeForm()
     subscribe_successfully = None
     website_info = None
+    video_slider = None
 
     if WebsiteMeta.objects.all().exists():
         website_info = WebsiteMeta.objects.all()[0]
+    
+    if VideoSlider.objects.all().exists():
+        video_slider = VideoSlider.objects.all()
 
     if featured_blog:
         featured_blog = featured_blog[0]
-
 
     if request.POST:
         subscribe_form = SubscribeForm(request.POST)
@@ -32,13 +35,26 @@ def index(request):
             subscribe_successfully = 'Subscribed Successfully'
             subscribe_form = SubscribeForm()
 
-    context = { 'posts':posts, 'top_post':top_post, 'recent_post':recent_post, 'subscribe_form':subscribe_form, 'subscribe_successfully':subscribe_successfully, 'featured_blog':featured_blog, 'website_info':website_info }
+    context = { 'posts':posts, 'top_post':top_post, 'recent_post':recent_post, 'subscribe_form':subscribe_form, 'subscribe_successfully':subscribe_successfully, 'featured_blog':featured_blog, 'website_info':website_info, 'video_slider':video_slider}
     return render(request, 'app/index.html', context)
 
 def post_page(request, slug):
     post = Post.objects.get(slug = slug)
     comments = Comments.objects.filter(post = post, parent=None)
     form = CommentForm()
+    #Bookmark Logic
+    bookmarked = False
+    if post.bookmarks.filter(id=request.user.id).exists():
+        bookmarked = True
+    is_bookmarked = bookmarked
+
+    #Likes Logic
+    liked = False
+    if post.likes.filter(id=request.user.id).exists():
+        liked = True
+    number_of_likes = post.number_of_likes()
+    post_is_liked = liked
+
 
     if request.POST:
         comment_form = CommentForm(request.POST)
@@ -67,7 +83,7 @@ def post_page(request, slug):
     else:
         post.view_count = post.view_count + 1
     post.save()
-    context = { 'post':post, 'form':form, 'comments':comments }
+    context = {'form':form, 'post':post, 'comments':comments, 'is_bookmarked':is_bookmarked, 'post_is_liked':post_is_liked, 'number_of_likes':number_of_likes}
     return render(request, 'app/post.html', context)
 
 def tag_page(request, slug):
@@ -115,3 +131,31 @@ def register_user(request):
 
     context = {'form':form }
     return render(request, 'registration/registration.html', context) 
+
+#Bookmark Logic
+def bookmark_post(request, slug):
+    post = get_object_or_404(Post, id=request.POST.get('post_id'))
+    if post.bookmarks.filter(id=request.user.id).exists():
+        post.bookmarks.remove(request.user)
+    else:
+        post.bookmarks.add(request.user)
+    return HttpResponseRedirect(reverse('post_page', args=[str(slug)]))
+
+#like Logic
+def like_post(request, slug):
+    post = get_object_or_404(Post, id=request.POST.get('post_id'))
+    if post.likes.filter(id=request.user.id).exists():
+        post.likes.remove(request.user)
+    else:
+        post.likes.add(request.user)
+    return HttpResponseRedirect(reverse('post_page', args=[str(slug)]))
+
+def all_bookmark_post(request):
+    all_bookmark_post = Post.objects.filter(bookmarks = request.user)
+    context = {'all_bookmark_post':all_bookmark_post}
+    return render(request, 'app/all_bookmark_post.html', context)
+
+def all_posts(request):
+    all_posts = Post.objects.all()
+    context = {'all_posts':all_posts}
+    return render(request, 'app/all_posts.html', context)

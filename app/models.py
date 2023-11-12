@@ -46,6 +46,11 @@ class Post(models.Model):
     view_count = models.IntegerField(null=True, blank=True)
     is_featured = models.BooleanField(default=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank =True)
+    bookmarks = models.ManyToManyField(User, blank=True, related_name="bookmarks", default=None)
+    likes = models.ManyToManyField(User, blank=True, related_name="post_like", default=None)
+
+    def number_of_likes(self):
+        return self.likes.count()
 
 class Comments(models.Model):
     content = models.TextField()
@@ -61,4 +66,8 @@ class WebsiteMeta(models.Model):
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=500)
     about = models.TextField()
-    
+
+class VideoSlider(models.Model):
+    video = models.FileField(null=True, blank=True, upload_to="videos/")
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=200)
